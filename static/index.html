@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Pulse</title><link rel="stylesheet" href="/style.css"></head>
+<body><main><h1>Pulse</h1><p>Register services and record health checks. Data lasts until the server stops.</p>
+<form id="register"><label>Service name <input id="name" required maxlength="80"></label><label>Tags (comma separated) <input id="tags"></label><button>Register</button></form>
+<p id="notice" role="status"></p><button id="refresh">Refresh services</button><section id="services"></section></main><script src="/app.js"></script></body>
+</html>

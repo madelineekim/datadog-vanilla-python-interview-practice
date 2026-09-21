@@ -1,0 +1,8 @@
+body { font: 16px system-ui, sans-serif; color: #243047; background: #f3f5f9; margin: 2rem; }
+main { max-width: 850px; margin: auto; }
+article { background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+label { display: block; margin: .5rem 0; }
+input, button { font: inherit; padding: .4rem; }
+button { cursor: pointer; margin-right: .5rem; }
+#notice { min-height: 1.5rem; }
+pre { white-space: pre-wrap; }

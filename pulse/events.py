@@ -83,3 +83,27 @@ def health_overview(state, values):
                       'status': current_status, 'event_count': event_counts[service['id']],
                       'last_received_at': record['received_at'] if record else None})
     return {'items': items, 'service_count': len(items), 'counts': counts}
+
+
+def search_events(state, values):
+    values = v.query(values, ('q', 'tag', 'status', 'offset', 'limit'))
+    term = v.text(values.get('q', ''), 'q', 100).casefold()
+    offset, limit = v.pagination(values)
+    tag = v.text(values['tag'], 'tag', 32).lower() if 'tag' in values else None
+    wanted_status = values.get('status')
+    state.events.reverse()
+    matches = [record for record in state.events
+               if term in record['message'].casefold()]
+    total = len(matches)
+    page = matches[offset:offset + limit]
+    if wanted_status:
+        page = [record for record in page if record['status'] == wanted_status]
+    if tag:
+        page = [record for record in page
+                if any(tag in item for item in state.services[record['service_id']]['tags'])]
+    items = []
+    for record in page:
+        item = deepcopy(record)
+        item['service_name'] = state.services[record['service_id']]['name']
+        items.append(item)
+    return {'items': items, 'total': total, 'offset': offset, 'limit': limit}

@@ -128,3 +128,22 @@ status, observation count, and last received timestamp. Optional `tag` selects
 services by exact normalized tag. The response includes `items`, `service_count`,
 and `counts` of services in each status, including `unknown` for services without
 observations. It is not paginated.
+
+### Search observations across services
+
+`GET /api/events/search?q=timeout` searches event messages across every service.
+`q` is required, trimmed, nonempty, and at most 100 characters; matching is a
+case-insensitive substring search. Optional `tag` uses the same exact normalized
+tag matching as the service list. Optional `status` accepts `ok`, `warning`, or
+`critical`; unsupported statuses return 400.
+
+Results are newest first, with later submissions first when timestamps tie.
+All filters apply before `offset` and `limit` using the existing pagination bounds.
+`total` counts all matching events before pagination. Each item includes the
+normal event fields plus the service's current `service_name`. Empty matches
+return 200 with an empty list. Search is read-only and must leave existing event
+lists and summaries unchanged.
+
+```sh
+curl 'http://127.0.0.1:8000/api/events/search?q=timeout&status=critical&limit=10'
+```

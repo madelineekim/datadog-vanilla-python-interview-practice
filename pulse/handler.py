@@ -64,6 +64,9 @@ class Handler(BaseHTTPRequestHandler):
             query(values, ())
             created = services.create_service(state, read_json(self))
             return 201, created, {'Location': '/api/services/' + created['id']}
+        if parts == ['api', 'events', 'search']:
+            self.require_method(('GET',))
+            return 200, events.search_events(state, values), {}
         if parts == ['api', 'overview']:
             self.require_method(('GET',))
             return 200, events.health_overview(state, values), {}

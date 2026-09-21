@@ -105,3 +105,14 @@ class HTTPTests(unittest.TestCase):
             self.assertIsNot(other.state, self.server.state)
         finally:
             other.server_close()
+
+    def test_search_endpoint(self):
+        service = self.create()
+        self.request('/api/services/' + service + '/events', 'POST', {'events': [
+            {'status': 'critical', 'latency_ms': 200, 'message': 'Connection timeout'}]})
+        status, result, _ = self.request('/api/events/search?q=TIMEOUT')
+        self.assertEqual(status, 200)
+        self.assertEqual(result['items'][0]['service_name'], 'Checkout')
+        self.assertEqual(result['total'], 1)
+        self.assertEqual(self.request('/api/events/search?q=timeout', 'POST', {})[0], 405)
+        self.assertEqual(self.request('/api/events/search')[0], 400)

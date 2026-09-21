@@ -30,7 +30,7 @@ def text(value, name, maximum=120):
 def tags(value):
     if not isinstance(value, list) or len(value) > 20:
         raise APIError(400, 'tags must be a list of at most 20 strings')
-    return {text(item, 'tag', 32).lower() for item in value}
+    return {text(item, 'tag', maximum=32).lower() for item in value}
 
 
 def status(value):
@@ -65,21 +65,34 @@ def integer(value, name, minimum, maximum):
 def query(values, allowed):
     if set(values) - set(allowed):
         raise APIError(400, 'Unknown query parameter')
-    if any(len(items) != 1 for items in values.values()):
-        raise APIError(400, 'Query parameters must not be repeated')
-    return {key: items[0] for key, items in values.items()}
+    # parse_qs returns lists, even for a parameter supplied only once.
+    result = {}
+    for key, items in values.items():
+        if len(items) != 1:
+            raise APIError(400, 'Query parameters must not be repeated')
+        result[key] = items[0]
+    return result
 
 
 def pagination(values):
-    return (integer(values.get('offset', '0'), 'offset', 0, 1000000),
-            integer(values.get('limit', '20'), 'limit', 1, 100))
+    offset = integer(values.get('offset', '0'), 'offset', minimum=0, maximum=1000000)
+    limit = integer(values.get('limit', '20'), 'limit', minimum=1, maximum=100)
+    return offset, limit
 
 
 def event(value):
-    fields(value, ('status', 'latency_ms', 'message', 'metadata'), ('status', 'latency_ms'))
+    fields(
+        value,
+        allowed=('status', 'latency_ms', 'message', 'metadata'),
+        required=('status', 'latency_ms'),
+    )
     latency = value['latency_ms']
-    if (isinstance(latency, bool) or not isinstance(latency, (int, float))
-            or not 0 <= latency <= 600000 or not math.isfinite(latency)):
+    # bool is a subclass of int, but is not a valid latency.
+    if isinstance(latency, bool) or not isinstance(latency, (int, float)):
+        raise APIError(400, 'latency_ms must be a number between 0 and 600000')
+    if not 0 <= latency <= 600000:
+        raise APIError(400, 'latency_ms must be a number between 0 and 600000')
+    if not math.isfinite(latency):
         raise APIError(400, 'latency_ms must be a number between 0 and 600000')
     message = value.get('message', '')
     if not isinstance(message, str) or len(message) > 500:
@@ -88,8 +101,12 @@ def event(value):
     if not isinstance(metadata, dict) or len(metadata) > 10:
         raise APIError(400, 'metadata must be an object with at most 10 entries')
     for key, item in metadata.items():
-        text(key, 'metadata key', 40)
+        text(key, 'metadata key', maximum=40)
         if not isinstance(item, str) or len(item) > 200:
             raise APIError(400, 'metadata values must be strings of at most 200 characters')
-    return {'status': status(value['status']), 'latency_ms': latency,
-            'message': message, 'metadata': dict(metadata)}
+    return {
+        'status': status(value['status']),
+        'latency_ms': latency,
+        'message': message,
+        'metadata': dict(metadata),
+    }

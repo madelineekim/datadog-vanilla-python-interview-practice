@@ -128,3 +128,45 @@ status, observation count, and last received timestamp. Optional `tag` selects
 services by exact normalized tag. The response includes `items`, `service_count`,
 and `counts` of services in each status, including `unknown` for services without
 observations. It is not paginated.
+
+## Python syntax / data structure calibration
+
+This interview practice tests recognition and reasoning about basic Python data
+structures. Keep the challenge in tracing request → routing → validation →
+business logic → in-memory state → response.
+
+Aim for roughly 70–80% straightforward Python and 20–30% moderately compact,
+idiomatic Python. This is a readability guideline, not a line-count quota.
+Use dictionaries, lists, sets, tuples, and nested JSON naturally. Preserve simple
+list and set comprehensions, dictionary lookups and updates, iteration over
+`dict.items()`, `dict.values()`, and lists, sorting with `key=`, pagination slices,
+and `parse_qs` dictionaries whose values are lists.
+
+Prefer a few readable lines for important operations. Avoid deeply nested
+comprehensions, comprehensions inside dictionary comprehensions, complicated
+generators inside `sum` or `max`, long chains of operations, excessive lambdas,
+clever one-liners, cryptic helpers with unexplained positional arguments, and
+condensed validation. Use named arguments when they clarify validation limits.
+Do not remove normal idiomatic Python just to make every line elementary.
+
+Examples to trace in this application:
+
+- `state.services[service_id]` stores a service; `.get(service_id)` looks it up.
+- Event batches validate before updating `state.events`; local lists use `.append()`.
+- `state.tags.update(service['tags'])` maintains the unique tag catalog.
+- Simple comprehensions filter services and collect unique service IDs.
+- `query()` iterates over `.items()` and unwraps single-item parameter lists.
+- Pagination slices a filtered list before serializing its records.
+- Event metadata and summary counts are nested dictionaries in JSON responses.
+
+For sorting practice, try this in a scratch session using populated state:
+
+```python
+services_by_name = sorted(
+    state.services.values(),
+    key=lambda service: service['name'].casefold(),
+)
+```
+
+The API itself keeps services in registration order. Future changes should keep
+this calibration while preserving the documented API behavior.

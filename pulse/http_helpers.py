@@ -19,7 +19,9 @@ def reject_constant(value):
 def read_json(handler):
     if handler.headers.get('Transfer-Encoding'):
         raise APIError(400, 'Transfer-Encoding is not supported')
-    content_type = handler.headers.get('Content-Type', '').split(';')[0].strip().lower()
+    content_type_header = handler.headers.get('Content-Type', '')
+    media_type = content_type_header.split(';')[0]
+    content_type = media_type.strip().lower()
     if content_type != 'application/json':
         raise APIError(415, 'Content-Type must be application/json')
     lengths = handler.headers.get_all('Content-Length', [])

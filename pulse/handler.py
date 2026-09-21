@@ -36,7 +36,9 @@ class Handler(BaseHTTPRequestHandler):
             if path in ASSETS:
                 self.require_method(('GET',))
                 filename, content_type = ASSETS[path]
-                send_bytes(self, 200, (STATIC / filename).read_bytes(), content_type)
+                asset_path = STATIC / filename
+                body = asset_path.read_bytes()
+                send_bytes(self, 200, body, content_type)
                 return
             status, body, headers = self.route()
             send_json(self, status, body, headers)
@@ -62,7 +64,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == 'GET':
                 return 200, services.list_services(state, values), {}
             query(values, ())
-            created = services.create_service(state, read_json(self))
+            body = read_json(self)
+            created = services.create_service(state, body)
             return 201, created, {'Location': '/api/services/' + created['id']}
         if parts == ['api', 'overview']:
             self.require_method(('GET',))
@@ -80,13 +83,17 @@ class Handler(BaseHTTPRequestHandler):
                 query(values, ())
                 if self.command == 'GET':
                     return 200, services.get_service(state, service_id), {}
-                return 200, services.update_service(state, service_id, read_json(self)), {}
+                body = read_json(self)
+                updated = services.update_service(state, service_id, body)
+                return 200, updated, {}
             if parts[3] == 'events':
                 self.require_method(('GET', 'POST'))
                 if self.command == 'GET':
                     return 200, events.list_events(state, service_id, values), {}
                 query(values, ())
-                return 201, events.submit_events(state, service_id, read_json(self)), {}
+                body = read_json(self)
+                result = events.submit_events(state, service_id, body)
+                return 201, result, {}
             if parts[3] == 'summary':
                 self.require_method(('GET',))
                 return 200, events.summary(state, service_id, values), {}
